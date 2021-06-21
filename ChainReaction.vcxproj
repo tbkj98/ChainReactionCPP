@@ -139,13 +139,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Board.cpp" />
+    <ClCompile Include="src\Board.cpp" />
     <ClCompile Include="ChainReaction.cpp" />
-    <ClCompile Include="Coordinate.cpp" />
+    <ClCompile Include="src\Coordinate.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Board.h" />
-    <ClInclude Include="Coordinate.h" />
+    <ClInclude Include="include\Board.h" />
+    <ClInclude Include="include\Coordinate.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

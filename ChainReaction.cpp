@@ -1,7 +1,7 @@
 // ChainReaction.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #include <memory>
-#include "Board.h"
+#include "include/Board.h"
 #include <iostream>
 
 int main()

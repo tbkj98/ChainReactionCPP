@@ -3,11 +3,16 @@
 class Coordinate
 {
 private:
-	int x;
-	int y;
+	// Coordinates for axes
+	int x, y;
+
+	// Value
 	int value;
+
+	// Threshold value on which the coordinate has to explode
 	int threshold;
 
+	// Overloading the operator to directly print the object over console
 	void print(std::ostream& out);
 
 	friend std::ostream& operator<<(std::ostream& out, Coordinate& coordinate);
