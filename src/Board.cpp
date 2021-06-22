@@ -1,5 +1,6 @@
 #include "../include/Board.h"
 #include <iostream>
+#include <queue>
 
 void Board::play()
 {
@@ -68,44 +69,35 @@ void Board::init()
 	initCoordinates();
 }
 
-void Board::explodeCoordinate(Coordinate& coordinate)
+void Board::performOperations(std::queue<Coordinate>& queue)
 {
-	std::vector<Coordinate> adjacentCoordinates = getAdjacentCoordinates(coordinate);
-
-	for (int i = 0; i < adjacentCoordinates.size(); i++)
+	while (!queue.empty())
 	{
-		Coordinate& adjacentCoordinate = adjacentCoordinates[i];
-		insert(adjacentCoordinate.getX(), adjacentCoordinate.getY());
+		Coordinate& coordinate = matrix[queue.front().getX()][queue.front().getY()];
+		queue.pop();
+
+		coordinate.increment();
+		if (coordinate.isThreshold())
+		{
+			std::vector<Coordinate> adjacentCoordinates = getAdjacentCoordinates(coordinate);
+			coordinate.reset();
+
+
+			for (Coordinate& adjacentCoordinate : adjacentCoordinates)
+			{
+				queue.push(adjacentCoordinate);
+			}
+		}
 	}
 }
 
-
-std::vector<Coordinate> Board::getAdjacentCoordinates(Coordinate& coordinate) const
+void Board::insert(int x, int y)
 {
-	std::vector<Coordinate> list;
-	
+	Coordinate& coordinate = matrix[x][y];
+	std::queue<Coordinate> queue;
 
-	if (isDownwardSpaceAvailable(coordinate)) {
-		auto t = getDownwardCoordinate(coordinate);
-		list.push_back(t);
-	}
-
-	if (isUpwardSpaceAvailable(coordinate)) {
-		auto t = getUpwardCoordinate(coordinate);
-		list.push_back(t);
-	}
-
-	if (isLeftwardSpaceAvailable(coordinate)) {
-		auto t = getLeftwardCoordinate(coordinate);
-		list.push_back(t);
-	}
-
-	if (isRightwardSpaceAvailable(coordinate)) {
-		auto t = getRightwardCoordinate(coordinate);
-		list.push_back(t);
-	}
-
-	return list;
+	queue.push(coordinate);
+	performOperations(queue);
 }
 
 Board::Board()
@@ -124,8 +116,6 @@ Board::Board(int width, int height)
 	init();
 }
 
-
-
 void Board::print() const
 {
 	for (int x = 0; x < height; x++)
@@ -140,21 +130,37 @@ void Board::print() const
 	}
 }
 
-void Board::insert(int x, int y)
-{
-	Coordinate& coordinate = matrix[x][y];
-	coordinate.increment();
-	
-	if (coordinate.isThreshold())
-	{
-		coordinate.reset();
-		explodeCoordinate(coordinate);
-	}
-}
-
 bool Board::isCoordinatesValid(int x, int y)
 {
 	return (x < width && x > -1) && (y < height && height > -1);
+}
+
+std::vector<Coordinate> Board::getAdjacentCoordinates(Coordinate& coordinate) const
+{
+	std::vector<Coordinate> list;
+
+
+	if (isDownwardSpaceAvailable(coordinate)) {
+		auto t = getDownwardCoordinate(coordinate);
+		list.push_back(matrix[t.getX()][t.getY()]);
+	}
+
+	if (isUpwardSpaceAvailable(coordinate)) {
+		auto t = getUpwardCoordinate(coordinate);
+		list.push_back(matrix[t.getX()][t.getY()]);
+	}
+
+	if (isLeftwardSpaceAvailable(coordinate)) {
+		auto t = getLeftwardCoordinate(coordinate);
+		list.push_back(matrix[t.getX()][t.getY()]);
+	}
+
+	if (isRightwardSpaceAvailable(coordinate)) {
+		auto t = getRightwardCoordinate(coordinate);
+		list.push_back(matrix[t.getX()][t.getY()]);
+	}
+
+	return list;
 }
 
 bool Board::isUpwardSpaceAvailable(Coordinate& coordinate) const
@@ -164,7 +170,7 @@ bool Board::isUpwardSpaceAvailable(Coordinate& coordinate) const
 
 bool Board::isDownwardSpaceAvailable(Coordinate& coordinate) const
 {
-	return coordinate.getY() < height;
+	return coordinate.getY() < height - 1;
 }
 
 bool Board::isLeftwardSpaceAvailable(Coordinate& coordinate) const
@@ -174,7 +180,7 @@ bool Board::isLeftwardSpaceAvailable(Coordinate& coordinate) const
 
 bool Board::isRightwardSpaceAvailable(Coordinate& coordinate) const
 {
-	return coordinate.getX() < width;
+	return coordinate.getX() < width - 1;
 }
 
 Coordinate Board::getRightwardCoordinate(Coordinate& coordinate) const

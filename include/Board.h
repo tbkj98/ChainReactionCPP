@@ -2,6 +2,7 @@
 #include "Coordinate.h"
 #include <vector>
 #include <memory>
+#include <queue>
 
 class Board
 {
@@ -17,13 +18,10 @@ private:
 	void initCoordinates();
 	void init();
 
-	// Function to explode the coordinate upon reaching the threshold
-	void explodeCoordinate(Coordinate& coordinate);
-
 	// Finds the coordinates in which a coordinate can explode
 	std::vector<Coordinate> getAdjacentCoordinates(Coordinate& coordinate) const;
 	
-	// Function to check in which direction can explosion take place
+	// Function to check in which direction explosion can take place
 	bool isUpwardSpaceAvailable(Coordinate& coordinate) const;
 	bool isDownwardSpaceAvailable(Coordinate& coordinate) const;
 	bool isLeftwardSpaceAvailable(Coordinate& coordinate) const;
@@ -35,6 +33,8 @@ private:
 	Coordinate getUpwardCoordinate(Coordinate& coordinate) const;
 	Coordinate getDownwardCoordinate(Coordinate& coordinate) const;
 	
+	void performOperations(std::queue<Coordinate>& queue);
+
 public:
 	Board();
 	Board(int width, int height);
