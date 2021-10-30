@@ -1,6 +1,7 @@
 #include "../include/Board.h"
 #include <iostream>
 #include <queue>
+#include <string>
 
 void Board::play()
 {
@@ -17,6 +18,7 @@ void Board::play()
 		{
 			insert(x, y);
 			print();
+			switchActivePlayer();
 		}
 		else
 		{
@@ -58,7 +60,7 @@ void Board::initCoordinates()
 			else
 			{
 				matrix[i][j] = Coordinate(i, j, 4);
-			}			
+			}
 		}
 	}
 }
@@ -67,6 +69,36 @@ void Board::init()
 {
 	initBoard();
 	initCoordinates();
+	initPlayersName();
+	initPlayersScore();
+}
+
+void Board::initPlayersScore()
+{
+	int playersCount = playersName.size();
+	playersScore = std::vector<int>(playersCount);
+	for (int i = 0; i < playersCount; i++)
+	{
+		playersScore.push_back(0);
+	}
+}
+
+void Board::initPlayersName()
+{
+	int playersCount = 0;
+	std::cout << "How many players = ";
+	std::cin >> playersCount;
+
+	playersName = std::vector<std::string>(playersCount);
+
+	for (int i = 0; i < playersCount; ++i)
+	{
+		std::cout << "Please enter name for player " << i << " = ";
+		std::string name = "";
+		std::cin >> std::ws;
+		std::getline(std::cin, name);
+		playersName[i] = name;
+	}
 }
 
 void Board::performOperations(std::queue<Coordinate>& queue)
@@ -76,12 +108,14 @@ void Board::performOperations(std::queue<Coordinate>& queue)
 		Coordinate& coordinate = matrix[queue.front().getX()][queue.front().getY()];
 		queue.pop();
 
+		int ownerIndex = coordinate.getOwnerIndex();
+		--playersScore[ownerIndex];
+		coordinate.setOwnerIndex(activePlayerIndex);
 		coordinate.increment();
 		if (coordinate.isThreshold())
 		{
 			std::vector<Coordinate> adjacentCoordinates = getAdjacentCoordinates(coordinate);
 			coordinate.reset();
-
 
 			for (Coordinate& adjacentCoordinate : adjacentCoordinates)
 			{
@@ -91,8 +125,18 @@ void Board::performOperations(std::queue<Coordinate>& queue)
 	}
 }
 
+void Board::switchActivePlayer()
+{
+	if (activePlayerIndex < (playersName.size() - 1))
+		++activePlayerIndex;
+	activePlayerIndex = 0;
+}
+
 void Board::insert(int x, int y)
 {
+	// Increasing the playerPlayedCount
+	// To indicate this many player turns already played
+	++playersPlayedCount;
 	Coordinate& coordinate = matrix[x][y];
 	std::queue<Coordinate> queue;
 
@@ -132,13 +176,17 @@ void Board::print() const
 
 bool Board::isCoordinatesValid(int x, int y)
 {
-	return (x < width && x > -1) && (y < height && height > -1);
+	// Coordinate should be in range
+	if (!(x < width && x > -1) && (y < height && height > -1))
+		return false;
+	Coordinate& coordinate = matrix[x][y];
+	// Coordinate's owner and active player should be same
+	return coordinate.getOwnerIndex() == activePlayerIndex || coordinate.isResetState();
 }
 
 std::vector<Coordinate> Board::getAdjacentCoordinates(Coordinate& coordinate) const
 {
 	std::vector<Coordinate> list;
-
 
 	if (isDownwardSpaceAvailable(coordinate)) {
 		auto t = getDownwardCoordinate(coordinate);
@@ -182,6 +230,26 @@ bool Board::isRightwardSpaceAvailable(Coordinate& coordinate) const
 {
 	return coordinate.getX() < width - 1;
 }
+
+bool Board::isInitialPlay() const
+{
+	return playersPlayedCount >= playersName.size();
+}
+
+bool Board::isGameFinished() const
+{
+	return playersName.size() == 1;
+}
+
+//Player Board::takePlayerDetailInput(int id)
+//{
+//	std::cout << "Please enter name for player " << id;
+//	std::string name = "";
+//	std::getline(std::cin, name);
+//	/*Player player(id, name);
+//	return player;*/
+//	return Player(id, name);
+//}
 
 Coordinate Board::getRightwardCoordinate(Coordinate& coordinate) const
 {

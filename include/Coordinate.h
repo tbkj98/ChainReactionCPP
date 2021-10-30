@@ -15,6 +15,9 @@ private:
 	// Overloading the operator to directly print the object over console
 	void print(std::ostream& out);
 
+	// Owner player index
+	int ownerIndex;
+
 	friend std::ostream& operator<<(std::ostream& out, Coordinate& coordinate);
 public:
 	Coordinate();
@@ -23,10 +26,13 @@ public:
 	int getX() const;
 	int getY() const;
 	int getValue() const;
+	int getOwnerIndex() const;
 
 	void reset();
 	void increment();
+	void setOwnerIndex(int index);
 
 	bool isThreshold() const;
+	bool isResetState() const;
 };
 
