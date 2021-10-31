@@ -1,8 +1,13 @@
 #pragma once
 #include <ostream>
+#include "Player.h"
 class Coordinate
 {
 private:
+
+	// Constant value to represent coordinate is blank
+	static const int BLANK_COORDINATE = -1;
+
 	// Coordinates for axes
 	int x, y;
 
@@ -18,11 +23,15 @@ private:
 	// Owner player index
 	int ownerIndex;
 
+	std::unique_ptr<Player> player;
+
 	friend std::ostream& operator<<(std::ostream& out, Coordinate& coordinate);
 public:
 	Coordinate();
+	Coordinate(const Coordinate& co);
 	Coordinate(int x, int y, int threshold);
-	
+	Coordinate operator=(Coordinate const& obj);
+
 	int getX() const;
 	int getY() const;
 	int getValue() const;

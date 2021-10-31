@@ -8,7 +8,8 @@
 class Board
 {
 private:
-	const static int NO_PLAYER_INDEX = -1;
+	static const int NO_SCORE = 0;
+
 	// Dimension of matrix
 	int width;
 	int height;
@@ -17,6 +18,7 @@ private:
 
 	std::vector<std::string> playersName;
 	std::vector<int> playersScore;
+	std::vector<Player> players;
 	unsigned int activePlayerIndex;
 	unsigned int playersPlayedCount;
 
@@ -24,6 +26,7 @@ private:
 	void initBoard();
 	void initCoordinates();
 	void init();
+	void initPlayers();
 	void initPlayersName();
 	void initPlayersScore();
 
@@ -47,6 +50,7 @@ private:
 
 	void performOperations(std::queue<Coordinate>& queue);
 	void switchActivePlayer();
+	void printGameFinishedMessage();
 
 public:
 	Board();

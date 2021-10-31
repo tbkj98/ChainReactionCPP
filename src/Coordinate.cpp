@@ -1,8 +1,25 @@
 #include "../include/Coordinate.h"
 
+
+
 Coordinate::Coordinate()
 {
-	Coordinate(0, 0, 0);
+	this->x = 0;
+	this->y = 0;
+	this->value = 0;
+	this->threshold = 0;
+	this->ownerIndex = Coordinate::BLANK_COORDINATE;
+	this->player = nullptr;
+}
+
+Coordinate::Coordinate(const Coordinate& co)
+{
+	this->x = co.x;
+	this->y = co.y;
+	this->value = 0;
+	this->threshold = co.threshold;
+	this->ownerIndex = Coordinate::BLANK_COORDINATE;
+	this->player = nullptr;
 }
 
 Coordinate::Coordinate(int x, int y, int threshold)
@@ -11,6 +28,8 @@ Coordinate::Coordinate(int x, int y, int threshold)
 	this->y = y;
 	this->value = 0;
 	this->threshold = threshold;
+	this->ownerIndex = Coordinate::BLANK_COORDINATE;
+	this->player = nullptr;
 }
 
 int Coordinate::getX() const
@@ -40,7 +59,7 @@ bool Coordinate::isThreshold() const
 
 bool Coordinate::isResetState() const
 {
-	return value == 0 && ownerIndex == -1;
+	return value == 0 && ownerIndex == Coordinate::BLANK_COORDINATE;
 }
 
 void Coordinate::reset()
@@ -68,4 +87,9 @@ std::ostream& operator<<(std::ostream& out, Coordinate& coordinate)
 void Coordinate::print(std::ostream& out)
 {
 	out << this->value;
+}
+
+Coordinate Coordinate::operator=(Coordinate const& obj)
+{
+	return Coordinate(obj);
 }

@@ -5,6 +5,9 @@
 class Player
 {
 private:
+
+	static int num;
+
 	int id;
 	std::string name;
 

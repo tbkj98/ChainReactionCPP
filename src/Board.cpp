@@ -73,6 +73,24 @@ void Board::init()
 	initPlayersScore();
 }
 
+void Board::initPlayers()
+{
+	int playersCount = 0;
+	std::cout << "How many players = ";
+	std::cin >> playersCount;
+
+	players = std::vector<Player>(playersCount);
+	for (int i = 0; i < playersCount; ++i)
+	{
+		std::cout << "Please enter name for player " << i << " = ";
+		std::string name = "";
+		std::cin >> std::ws;
+		std::getline(std::cin, name);
+		Player player(i);
+		players[i] = player;
+	}
+}
+
 void Board::initPlayersScore()
 {
 	int playersCount = playersName.size();
@@ -108,9 +126,27 @@ void Board::performOperations(std::queue<Coordinate>& queue)
 		Coordinate& coordinate = matrix[queue.front().getX()][queue.front().getY()];
 		queue.pop();
 
-		int ownerIndex = coordinate.getOwnerIndex();
-		--playersScore[ownerIndex];
-		coordinate.setOwnerIndex(activePlayerIndex);
+		if (coordinate.isResetState())
+		{
+			coordinate.setOwnerIndex(activePlayerIndex);
+			++playersScore[activePlayerIndex];
+		}
+		int currentOwnerIndex = coordinate.getOwnerIndex();
+		if (currentOwnerIndex != activePlayerIndex)
+		{
+			--playersScore[currentOwnerIndex];
+			if (playersScore[currentOwnerIndex] <= Board::NO_SCORE && !isInitialPlay())
+			{
+				// Player lost
+				// Removing from players
+				playersName.erase(playersName.begin() + currentOwnerIndex);
+				if (isGameFinished())
+					printGameFinishedMessage();
+			}
+			coordinate.setOwnerIndex(activePlayerIndex);
+			++playersScore[activePlayerIndex];
+		}
+
 		coordinate.increment();
 		if (coordinate.isThreshold())
 		{
@@ -130,6 +166,11 @@ void Board::switchActivePlayer()
 	if (activePlayerIndex < (playersName.size() - 1))
 		++activePlayerIndex;
 	activePlayerIndex = 0;
+}
+
+void Board::printGameFinishedMessage()
+{
+	std::cout << "Game finished.\nPlayer " << playersName.at(0) << " won\n";
 }
 
 void Board::insert(int x, int y)

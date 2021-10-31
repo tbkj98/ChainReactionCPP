@@ -1,5 +1,6 @@
 #include "..\include\Player.h"
-#include "..\include\Player.h"
+
+int Player::num = 0;
 
 Player::Player()
 {
@@ -21,7 +22,7 @@ Player::Player(int id, std::string name)
 
 bool Player::operator==(Player const& obj)
 {
-	return obj == nullptr ? false : this->id == obj.id && this->name == obj.name;
+	return this->id == obj.id && this->name == obj.name;
 }
 
 Player::Player(Player const& player)
