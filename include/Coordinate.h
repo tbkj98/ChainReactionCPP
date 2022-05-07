@@ -5,9 +5,6 @@ class Coordinate
 {
 private:
 
-	// Constant value to represent coordinate is blank
-	static const int BLANK_COORDINATE = -1;
-
 	// Coordinates for axes
 	int x, y;
 
@@ -20,10 +17,7 @@ private:
 	// Overloading the operator to directly print the object over console
 	void print(std::ostream& out);
 
-	// Owner player index
-	int ownerIndex;
-
-	std::unique_ptr<Player> player;
+	std::shared_ptr<Player> owner;
 
 	friend std::ostream& operator<<(std::ostream& out, Coordinate& coordinate);
 public:
@@ -35,11 +29,11 @@ public:
 	int getX() const;
 	int getY() const;
 	int getValue() const;
-	int getOwnerIndex() const;
+	std::shared_ptr<Player> getOwner() const;
 
 	void reset();
 	void increment();
-	void setOwnerIndex(int index);
+	void setOwner(std::shared_ptr<Player> owner);
 
 	bool isThreshold() const;
 	bool isResetState() const;

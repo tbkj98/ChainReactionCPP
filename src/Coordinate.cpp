@@ -8,18 +8,16 @@ Coordinate::Coordinate()
 	this->y = 0;
 	this->value = 0;
 	this->threshold = 0;
-	this->ownerIndex = Coordinate::BLANK_COORDINATE;
-	this->player = nullptr;
+	this->owner = nullptr;
 }
 
 Coordinate::Coordinate(const Coordinate& co)
 {
 	this->x = co.x;
 	this->y = co.y;
-	this->value = 0;
+	this->value = co.value;
 	this->threshold = co.threshold;
-	this->ownerIndex = Coordinate::BLANK_COORDINATE;
-	this->player = nullptr;
+	this->owner = co.owner;
 }
 
 Coordinate::Coordinate(int x, int y, int threshold)
@@ -28,8 +26,7 @@ Coordinate::Coordinate(int x, int y, int threshold)
 	this->y = y;
 	this->value = 0;
 	this->threshold = threshold;
-	this->ownerIndex = Coordinate::BLANK_COORDINATE;
-	this->player = nullptr;
+	this->owner = nullptr;
 }
 
 int Coordinate::getX() const
@@ -47,9 +44,9 @@ int Coordinate::getValue() const
 	return this->value;
 }
 
-int Coordinate::getOwnerIndex() const
+std::shared_ptr<Player> Coordinate::getOwner() const
 {
-	return this->ownerIndex;
+	return owner;
 }
 
 bool Coordinate::isThreshold() const 
@@ -59,13 +56,14 @@ bool Coordinate::isThreshold() const
 
 bool Coordinate::isResetState() const
 {
-	return value == 0 && ownerIndex == Coordinate::BLANK_COORDINATE;
+	return value == 0 && owner == nullptr;
 }
 
 void Coordinate::reset()
 {
 	this->value = 0;
-	this->ownerIndex = -1;
+	this->owner->decrement();
+	this->owner = nullptr;
 }
 
 void Coordinate::increment()
@@ -73,9 +71,9 @@ void Coordinate::increment()
 	++value;
 }
 
-void Coordinate::setOwnerIndex(int index)
+void Coordinate::setOwner(std::shared_ptr<Player> owner)
 {
-	this->ownerIndex = index;
+	this->owner = owner;
 }
 
 std::ostream& operator<<(std::ostream& out, Coordinate& coordinate)
@@ -86,7 +84,8 @@ std::ostream& operator<<(std::ostream& out, Coordinate& coordinate)
 
 void Coordinate::print(std::ostream& out)
 {
-	out << this->value;
+	int colorCode = isResetState() ? 37 : owner->getColorCode();
+	out << "\x1B[" << colorCode << "m" << this->value << "\033[0m\t\t";
 }
 
 Coordinate Coordinate::operator=(Coordinate const& obj)

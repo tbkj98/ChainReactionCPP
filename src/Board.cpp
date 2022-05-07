@@ -33,10 +33,10 @@ void Board::play()
 
 void Board::initBoard()
 {
-	matrix = std::vector<std::vector<Coordinate>>(height);
+	matrix = std::vector<std::vector<std::shared_ptr<Coordinate>>>(height);
 	for (int i = 0; i < height; i++)
 	{
-		matrix[i] = std::vector<Coordinate>(width);
+		matrix[i] = std::vector<std::shared_ptr<Coordinate>>(width, nullptr);
 	}
 }
 
@@ -49,17 +49,17 @@ void Board::initCoordinates()
 			// Corner coordinate
 			if ((i == 0 && (j == 0 || j == width - 1)) || (i == height - 1 && (j == 0 || j == width - 1)))
 			{
-				matrix[i][j] = Coordinate(i, j, 2);
+				matrix[i][j] = std::make_shared<Coordinate>(i, j, 2);
 			}
-			// Sides coordinate
+			// Edge coordinate
 			else if (i == 0 || j == 0 || i == height - 1 || j == width - 1)
 			{
-				matrix[i][j] = Coordinate(i, j, 3);
+				matrix[i][j] = std::make_shared<Coordinate>(i, j, 3);
 			}
 			// Middle coordinate
 			else
 			{
-				matrix[i][j] = Coordinate(i, j, 4);
+				matrix[i][j] = std::make_shared<Coordinate>(i, j, 4);
 			}
 		}
 	}
@@ -69,8 +69,7 @@ void Board::init()
 {
 	initBoard();
 	initCoordinates();
-	initPlayersName();
-	initPlayersScore();
+	initPlayers();
 }
 
 void Board::initPlayers()
@@ -79,81 +78,57 @@ void Board::initPlayers()
 	std::cout << "How many players = ";
 	std::cin >> playersCount;
 
-	players = std::vector<Player>(playersCount);
+	players = std::vector<std::shared_ptr<Player>>(playersCount, nullptr);
 	for (int i = 0; i < playersCount; ++i)
 	{
-		std::cout << "Please enter name for player " << i << " = ";
-		std::string name = "";
-		std::cin >> std::ws;
-		std::getline(std::cin, name);
-		Player player(i);
-		players[i] = player;
+		players[i] = takePlayerDetailInput(i);
 	}
 }
 
-void Board::initPlayersScore()
-{
-	int playersCount = playersName.size();
-	playersScore = std::vector<int>(playersCount);
-	for (int i = 0; i < playersCount; i++)
-	{
-		playersScore.push_back(0);
-	}
-}
-
-void Board::initPlayersName()
-{
-	int playersCount = 0;
-	std::cout << "How many players = ";
-	std::cin >> playersCount;
-
-	playersName = std::vector<std::string>(playersCount);
-
-	for (int i = 0; i < playersCount; ++i)
-	{
-		std::cout << "Please enter name for player " << i << " = ";
-		std::string name = "";
-		std::cin >> std::ws;
-		std::getline(std::cin, name);
-		playersName[i] = name;
-	}
-}
-
-void Board::performOperations(std::queue<Coordinate>& queue)
+void Board::performOperations(std::queue<std::shared_ptr<Coordinate>>& queue)
 {
 	while (!queue.empty())
 	{
-		Coordinate& coordinate = matrix[queue.front().getX()][queue.front().getY()];
+		std::shared_ptr<Coordinate> coordinate = queue.front();
 		queue.pop();
 
-		if (coordinate.isResetState())
+		std::shared_ptr<Player> activePlayer = players[activePlayerIndex];
+		std::shared_ptr<Player> coordinateOwner = coordinate->getOwner();
+
+		// Setting false the played property
+		// Because player already played
+		activePlayer->played();
+
+		if (coordinate->isResetState())
 		{
-			coordinate.setOwnerIndex(activePlayerIndex);
-			++playersScore[activePlayerIndex];
+			coordinate->setOwner(activePlayer);
+			activePlayer->increment();
 		}
-		int currentOwnerIndex = coordinate.getOwnerIndex();
-		if (currentOwnerIndex != activePlayerIndex)
+		else if (activePlayer != coordinateOwner)
 		{
-			--playersScore[currentOwnerIndex];
-			if (playersScore[currentOwnerIndex] <= Board::NO_SCORE && !isInitialPlay())
+			coordinateOwner->decrement();
+			coordinate->setOwner(activePlayer);
+			if (coordinateOwner->getScore() <= Board::NO_SCORE && coordinateOwner->hasPlayed())
 			{
 				// Player lost
 				// Removing from players
-				playersName.erase(playersName.begin() + currentOwnerIndex);
-				if (isGameFinished())
+				players.erase(std::remove(players.begin(), players.end(), coordinateOwner), players.end());
+				if (isGameOver())
+				{
 					printGameFinishedMessage();
+					exit(0);
+				}
 			}
-			coordinate.setOwnerIndex(activePlayerIndex);
-			++playersScore[activePlayerIndex];
+			activePlayer->increment();
 		}
 
-		coordinate.increment();
-		if (coordinate.isThreshold())
+		coordinate->increment();
+		if (coordinate->isThreshold())
 		{
-			std::vector<Coordinate> adjacentCoordinates = getAdjacentCoordinates(coordinate);
-			coordinate.reset();
+			std::vector<std::shared_ptr<Coordinate>> adjacentCoordinates = getAdjacentCoordinates(coordinate);
+			coordinate->reset();
 
-			for (Coordinate& adjacentCoordinate : adjacentCoordinates)
+			for (std::shared_ptr<Coordinate> adjacentCoordinate : adjacentCoordinates)
 			{
 				queue.push(adjacentCoordinate);
 			}
@@ -163,23 +138,21 @@ void Board::performOperations(std::queue<Coordinate>& queue)
 
 void Board::switchActivePlayer()
 {
-	if (activePlayerIndex < (playersName.size() - 1))
+	if (activePlayerIndex < (players.size() - 1))
 		++activePlayerIndex;
-	activePlayerIndex = 0;
+	else 
+		activePlayerIndex = 0;
 }
 
 void Board::printGameFinishedMessage()
 {
-	std::cout << "Game finished.\nPlayer " << playersName.at(0) << " won\n";
+	std::cout << "Game finished.\nPlayer " << players.at(0)->getName() << " won\n";
 }
 
 void Board::insert(int x, int y)
 {
-	// Increasing the playerPlayedCount
-	// To indicate this many player turns already played
-	++playersPlayedCount;
-	Coordinate& coordinate = matrix[x][y];
-	std::queue<Coordinate> queue;
+	std::shared_ptr<Coordinate> coordinate = matrix[x][y];
+	std::queue<std::shared_ptr<Coordinate>> queue;
 
 	queue.push(coordinate);
 	performOperations(queue);
@@ -203,15 +176,25 @@ Board::Board(int width, int height)
 
 void Board::print() const
 {
+	// Clearing the screen
+	std::cout << "\033[2J\033[1;1H";
+
+	// Printing board
 	for (int x = 0; x < height; x++)
 	{
 		for (int y = 0; y < width; y++)
 		{
-			Coordinate coordinate = matrix[x][y];
-			std::cout << coordinate << " ";
+			std::shared_ptr<Coordinate> coordinate = matrix[x][y];
+			std::cout << *coordinate << " ";
 		}
 
 		std::cout << "\n";
+	}
+
+	// Printing player scores
+	for (auto player : players)
+	{
+		std::cout << *player << std::endl;
 	}
 }
 
@@ -220,94 +203,93 @@ bool Board::isCoordinatesValid(int x, int y)
 	// Coordinate should be in range
 	if (!(x < width && x > -1) && (y < height && height > -1))
 		return false;
-	Coordinate& coordinate = matrix[x][y];
+	std::shared_ptr<Coordinate> coordinate = matrix[x][y];
 	// Coordinate's owner and active player should be same
-	return coordinate.getOwnerIndex() == activePlayerIndex || coordinate.isResetState();
+	// active player can only tap on their coordinate
+	// Or No one has yet tapped the coordinate
+	return coordinate->getOwner() == players[activePlayerIndex] || coordinate->isResetState();
 }
 
-std::vector<Coordinate> Board::getAdjacentCoordinates(Coordinate& coordinate) const
+std::vector<std::shared_ptr<Coordinate>> Board::getAdjacentCoordinates(std::shared_ptr<Coordinate> coordinate) const
 {
-	std::vector<Coordinate> list;
+	std::vector<std::shared_ptr<Coordinate>> list;
 
 	if (isDownwardSpaceAvailable(coordinate)) {
-		auto t = getDownwardCoordinate(coordinate);
-		list.push_back(matrix[t.getX()][t.getY()]);
+		list.push_back(getDownwardCoordinate(coordinate));
 	}
 
 	if (isUpwardSpaceAvailable(coordinate)) {
-		auto t = getUpwardCoordinate(coordinate);
-		list.push_back(matrix[t.getX()][t.getY()]);
+		list.push_back(getUpwardCoordinate(coordinate));
 	}
 
 	if (isLeftwardSpaceAvailable(coordinate)) {
-		auto t = getLeftwardCoordinate(coordinate);
-		list.push_back(matrix[t.getX()][t.getY()]);
+		list.push_back(getLeftwardCoordinate(coordinate));
 	}
 
 	if (isRightwardSpaceAvailable(coordinate)) {
-		auto t = getRightwardCoordinate(coordinate);
-		list.push_back(matrix[t.getX()][t.getY()]);
+		list.push_back(getRightwardCoordinate(coordinate));
 	}
 
 	return list;
 }
 
-bool Board::isUpwardSpaceAvailable(Coordinate& coordinate) const
+bool Board::isUpwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) const
 {
-	return coordinate.getY() > 0;
+	return coordinate->getY() > 0;
 }
 
-bool Board::isDownwardSpaceAvailable(Coordinate& coordinate) const
+bool Board::isDownwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) const
 {
-	return coordinate.getY() < height - 1;
+	return coordinate->getY() < height - 1;
 }
 
-bool Board::isLeftwardSpaceAvailable(Coordinate& coordinate) const
+bool Board::isLeftwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) const
 {
-	return coordinate.getX() > 0;
+	return coordinate->getX() > 0;
 }
 
-bool Board::isRightwardSpaceAvailable(Coordinate& coordinate) const
+bool Board::isRightwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) const
 {
-	return coordinate.getX() < width - 1;
+	return coordinate->getX() < width - 1;
 }
 
-bool Board::isInitialPlay() const
+bool Board::isGameOver() const
 {
-	return playersPlayedCount >= playersName.size();
+	return players.size() == 1;
 }
 
-bool Board::isGameFinished() const
+std::shared_ptr<Player> Board::takePlayerDetailInput(int id	)
 {
-	return playersName.size() == 1;
+	std::cout << "Please enter name for player " << id << " : ";
+	std::string name = "";
+	int color = 37;
+
+	std::cin >> std::ws;
+	std::getline(std::cin, name);
+	
+	std::cout << "Please enter color code for player " << id << " : ";
+	std::cin >> std::ws;
+	std::cin >> color;
+
+	return std::make_shared<Player>(id, name, color);
 }
 
-//Player Board::takePlayerDetailInput(int id)
-//{
-//	std::cout << "Please enter name for player " << id;
-//	std::string name = "";
-//	std::getline(std::cin, name);
-//	/*Player player(id, name);
-//	return player;*/
-//	return Player(id, name);
-//}
-
-Coordinate Board::getRightwardCoordinate(Coordinate& coordinate) const
+std::shared_ptr<Coordinate> Board::getRightwardCoordinate(std::shared_ptr<Coordinate> coordinate) const
 {
-	return matrix[coordinate.getX() + 1][coordinate.getY()];
+	return matrix[coordinate->getX() + 1][coordinate->getY()];
 }
 
-Coordinate Board::getLeftwardCoordinate(Coordinate& coordinate) const
+std::shared_ptr<Coordinate> Board::getLeftwardCoordinate(std::shared_ptr<Coordinate> coordinate) const
 {
-	return matrix[coordinate.getX() - 1][coordinate.getY()];
+	return matrix[coordinate->getX() - 1][coordinate->getY()];
 }
 
-Coordinate Board::getUpwardCoordinate(Coordinate& coordinate) const
+std::shared_ptr<Coordinate> Board::getUpwardCoordinate(std::shared_ptr<Coordinate> coordinate) const
 {
-	return matrix[coordinate.getX()][coordinate.getY() - 1];
+	return matrix[coordinate->getX()][coordinate->getY() - 1];
 }
 
-Coordinate Board::getDownwardCoordinate(Coordinate& coordinate) const
+std::shared_ptr<Coordinate> Board::getDownwardCoordinate(std::shared_ptr<Coordinate> coordinate) const
 {
-	return matrix[coordinate.getX()][coordinate.getY() + 1];
+	return matrix[coordinate->getX()][coordinate->getY() + 1];
 }

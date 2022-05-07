@@ -8,51 +8,49 @@
 class Board
 {
 private:
-	static const int NO_SCORE = 0;
-
+	
 	// Dimension of matrix
 	int width;
 	int height;
 
-	std::vector<std::vector<Coordinate>> matrix;
+	std::vector<std::vector<std::shared_ptr<Coordinate>>> matrix;
 
-	std::vector<std::string> playersName;
-	std::vector<int> playersScore;
-	std::vector<Player> players;
-	unsigned int activePlayerIndex;
-	unsigned int playersPlayedCount;
+	std::vector<std::shared_ptr<Player>> players;
+	size_t activePlayerIndex;
 
 	// Initialising functions
+	void init();
 	void initBoard();
 	void initCoordinates();
-	void init();
 	void initPlayers();
-	void initPlayersName();
-	void initPlayersScore();
 
 	// Finds the coordinates in which a coordinate can explode
-	std::vector<Coordinate> getAdjacentCoordinates(Coordinate& coordinate) const;
+	std::vector<std::shared_ptr<Coordinate>> getAdjacentCoordinates(std::shared_ptr<Coordinate> coordinate) const;
 
 	// Function to check in which direction explosion can take place
-	bool isUpwardSpaceAvailable(Coordinate& coordinate) const;
-	bool isDownwardSpaceAvailable(Coordinate& coordinate) const;
-	bool isLeftwardSpaceAvailable(Coordinate& coordinate) const;
-	bool isRightwardSpaceAvailable(Coordinate& coordinate) const;
+	bool isUpwardSpaceAvailable(std::shared_ptr<Coordinate>coordinate) const;
+	bool isDownwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) const;
+	bool isLeftwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) const;
+	bool isRightwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) const;
 
-	bool isInitialPlay() const;
-	bool isGameFinished() const;
+	bool isGameOver() const;
 
 	// Function to find the coordinate in a perticular direction
-	Coordinate getRightwardCoordinate(Coordinate& coordinate) const;
-	Coordinate getLeftwardCoordinate(Coordinate& coordinate) const;
-	Coordinate getUpwardCoordinate(Coordinate& coordinate) const;
-	Coordinate getDownwardCoordinate(Coordinate& coordinate) const;
+	std::shared_ptr<Coordinate> getRightwardCoordinate(std::shared_ptr<Coordinate> coordinate) const;
+	std::shared_ptr<Coordinate> getLeftwardCoordinate(std::shared_ptr<Coordinate> coordinate) const;
+	std::shared_ptr<Coordinate> getUpwardCoordinate(std::shared_ptr<Coordinate> coordinate) const;
+	std::shared_ptr<Coordinate> getDownwardCoordinate(std::shared_ptr<Coordinate> coordinate) const;
 
-	void performOperations(std::queue<Coordinate>& queue);
+	void performOperations(std::queue<std::shared_ptr<Coordinate>>& queue);
 	void switchActivePlayer();
 	void printGameFinishedMessage();
 
+	// Function to fill the player details
+	std::shared_ptr<Player> takePlayerDetailInput(int id);
+
 public:
+	static const int NO_SCORE = 0;
+
 	Board();
 	Board(int width, int height);
 
