@@ -24,6 +24,7 @@ public:
 	Coordinate();
 	Coordinate(const Coordinate& co);
 	Coordinate(int x, int y, int threshold);
+
 	Coordinate operator=(Coordinate const& obj);
 
 	int getX() const;

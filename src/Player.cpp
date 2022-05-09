@@ -1,30 +1,22 @@
 #include "..\include\Player.h"
 #include "..\include\Board.h"
+#include "../include/Game.h"
 
-int Player::num = 0;
-
-Player::Player()
-{
-	this->id = ++Player::num;
-	this->name = "Player " + id;
-	this->score = Board::NO_SCORE;
-	this->colorCode = 37;
-}
 
 Player::Player(int id)
 {
 	this->id = id;
 	this->name = "Player " + id;
-	this->score = Board::NO_SCORE;
-	this->colorCode = 37;
+	this->score = Game::NO_SCORE;
+	this->color = colors[colors.size() - 1];
 }
 
-Player::Player(int id, std::string name, int color)
+Player::Player(int id, std::string name, Color color)
 {
 	this->id = id;
 	this->name = name;
-	this->score = Board::NO_SCORE;
-	this->colorCode = color;
+	this->score = Game::NO_SCORE;
+	this->color = color;
 }
 
 bool Player::operator==(Player const& obj)
@@ -32,14 +24,14 @@ bool Player::operator==(Player const& obj)
 	return this->id == obj.id && this->name == obj.name;
 }
 
-int Player::getScore() const
-{
-	return score;
-}
-
 std::string Player::getName() const
 {
 	return name;
+}
+
+bool Player::isNoScore() const
+{
+	return score == Game::NO_SCORE;
 }
 
 bool Player::hasPlayed() const
@@ -47,14 +39,9 @@ bool Player::hasPlayed() const
 	return dirty;
 }
 
-int Player::getColorCode() const
+Color Player::getColor() const
 {
-	return colorCode;
-}
-
-void Player::setScore(int score)
-{
-	this->score = score;
+	return color;
 }
 
 void Player::played()
@@ -76,12 +63,15 @@ Player::Player(Player const& player)
 {
 	this->id = player.id;
 	this->name = player.name;
+	this->color = player.color;
+	this->score = player.score;
+	this->dirty = player.dirty;
 }
 
 void Player::print(std::ostream& out)
 {
 	std::string stmt = "ID = " + std::to_string(id) + ", Name = " + name + ", Score = " + std::to_string(score);
-	out << "\x1B[" << colorCode << "m" << stmt << "\033[0m\t\t";
+	out << "\x1B[" << color.getCode() << "m" << stmt << "\033[0m\t\t";
 }
 
 std::ostream& operator<<(std::ostream& out, Player& player)

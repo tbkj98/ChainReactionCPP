@@ -1,7 +1,5 @@
 #include "../include/Coordinate.h"
 
-
-
 Coordinate::Coordinate()
 {
 	this->x = 0;
@@ -84,8 +82,8 @@ std::ostream& operator<<(std::ostream& out, Coordinate& coordinate)
 
 void Coordinate::print(std::ostream& out)
 {
-	int colorCode = isResetState() ? 37 : owner->getColorCode();
-	out << "\x1B[" << colorCode << "m" << this->value << "\033[0m\t\t";
+	Color color = owner == nullptr ? colors[colors.size() - 1] : owner->getColor();
+	out << "\x1B[" << color.getCode() << "m" << this->value << "\033[0m\t\t";
 }
 
 Coordinate Coordinate::operator=(Coordinate const& obj)

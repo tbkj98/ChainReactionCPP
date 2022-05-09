@@ -159,12 +159,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Color.cpp" />
+    <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\Board.cpp" />
     <ClCompile Include="ChainReaction.cpp" />
     <ClCompile Include="src\Coordinate.cpp" />
     <ClCompile Include="src\Player.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Color.h" />
+    <ClInclude Include="include\Game.h" />
     <ClInclude Include="include\Board.h" />
     <ClInclude Include="include\Coordinate.h" />
     <ClInclude Include="include\Player.h" />

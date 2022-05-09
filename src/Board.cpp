@@ -1,40 +1,12 @@
 #include "../include/Board.h"
 #include <iostream>
 #include <queue>
-#include <string>
 
-void Board::play()
-{
-	print();
 
-	int x, y;
-	char inputToBeTaken = 'y';
-
-	do
-	{
-		std::cout << "Enter coordinates\n";
-		std::cin >> x >> y;
-		if (isCoordinatesValid(x, y))
-		{
-			insert(x, y);
-			print();
-			switchActivePlayer();
-		}
-		else
-		{
-			std::cout << "Enter valid coordinates\n";
-		}
-
-		std::cout << "Continue playing(y/n) ? = ";
-		std::cin >> inputToBeTaken;
-
-	} while (inputToBeTaken == 'y' || inputToBeTaken == 'Y');
-}
-
-void Board::initBoard()
+void Board::initMatrix()
 {
 	matrix = std::vector<std::vector<std::shared_ptr<Coordinate>>>(height);
-	for (int i = 0; i < height; i++)
+	for (size_t i = 0; i < height; i++)
 	{
 		matrix[i] = std::vector<std::shared_ptr<Coordinate>>(width, nullptr);
 	}
@@ -67,103 +39,84 @@ void Board::initCoordinates()
 
 void Board::init()
 {
-	initBoard();
+	initMatrix();
 	initCoordinates();
-	initPlayers();
 }
 
-void Board::initPlayers()
+std::vector<std::shared_ptr<Player>> Board::performOperations(std::queue<std::shared_ptr<Coordinate>>& queue, std::shared_ptr<Player> activePlayer)
 {
-	int playersCount = 0;
-	std::cout << "How many players = ";
-	std::cin >> playersCount;
-
-	players = std::vector<std::shared_ptr<Player>>(playersCount, nullptr);
-	for (int i = 0; i < playersCount; ++i)
-	{
-		players[i] = takePlayerDetailInput(i);
-	}
-}
-
-void Board::performOperations(std::queue<std::shared_ptr<Coordinate>>& queue)
-{
+	auto lostPlayers = std::vector<std::shared_ptr<Player>>(0, nullptr);
 	while (!queue.empty())
 	{
 		std::shared_ptr<Coordinate> coordinate = queue.front();
 		queue.pop();
 
-		std::shared_ptr<Player> activePlayer = players[activePlayerIndex];
+		// Current coordinate owner
 		std::shared_ptr<Player> coordinateOwner = coordinate->getOwner();
 
-		// Setting false the played property
-		// Because player already played
+		// Player already played
+		// This is helpful to find the lost player
 		activePlayer->played();
 
+		// If the player is in reset state
+		// We need to change the owner to activePlayer
+		// And increment the score of activePlayer
 		if (coordinate->isResetState())
 		{
 			coordinate->setOwner(activePlayer);
 			activePlayer->increment();
 		}
+		// We need to decrement the score of current coordinate owner
+		// Because the coordinate lost the ownership, coordinate now belongs to activePlayer
+		// If the coordinateOwner has played before and is now on NO_SCORE
+		// We need to eliminate the player(coordinateOwner)
 		else if (activePlayer != coordinateOwner)
 		{
 			coordinateOwner->decrement();
 			coordinate->setOwner(activePlayer);
-			if (coordinateOwner->getScore() <= Board::NO_SCORE && coordinateOwner->hasPlayed())
+			if (coordinateOwner->isNoScore() && coordinateOwner->hasPlayed())
 			{
 				// Player lost
-				// Removing from players
-				players.erase(std::remove(players.begin(), players.end(), coordinateOwner), players.end());
-				if (isGameOver())
-				{
-					printGameFinishedMessage();
-					exit(0);
-				}
+				// Adding to lostPlayers list
+				lostPlayers.push_back(coordinateOwner);
 			}
 			activePlayer->increment();
 		}
 
+		// Incrementing the coordinate value
 		coordinate->increment();
+
+		// Checking if the coordinate has reached the threshold
+		// If yes, need to explode the coordinate in available adjacent directions
 		if (coordinate->isThreshold())
 		{
 			std::vector<std::shared_ptr<Coordinate>> adjacentCoordinates = getAdjacentCoordinates(coordinate);
+			
+			// Resetting the coordinate
+			// Coordinate has exploded
 			coordinate->reset();
 
+			// Inserting the adjacent coordinates into queue
+			// Need to treat the adjacent coordinates 
+			// As the user insertions(user tap)
 			for (std::shared_ptr<Coordinate> adjacentCoordinate : adjacentCoordinates)
 			{
 				queue.push(adjacentCoordinate);
 			}
 		}
 	}
+
+	return lostPlayers;
 }
 
-void Board::switchActivePlayer()
-{
-	if (activePlayerIndex < (players.size() - 1))
-		++activePlayerIndex;
-	else 
-		activePlayerIndex = 0;
-}
 
-void Board::printGameFinishedMessage()
-{
-	std::cout << "Game finished.\nPlayer " << players.at(0)->getName() << " won\n";
-}
-
-void Board::insert(int x, int y)
+std::vector<std::shared_ptr<Player>> Board::insert(int x, int y, std::shared_ptr<Player> activePlayer)
 {
 	std::shared_ptr<Coordinate> coordinate = matrix[x][y];
 	std::queue<std::shared_ptr<Coordinate>> queue;
 
 	queue.push(coordinate);
-	performOperations(queue);
-}
-
-Board::Board()
-{
-	this->width = 5;
-	this->height = 5;
-
-	init();
+	return performOperations(queue, activePlayer);
 }
 
 Board::Board(int width, int height)
@@ -176,9 +129,6 @@ Board::Board(int width, int height)
 
 void Board::print() const
 {
-	// Clearing the screen
-	std::cout << "\033[2J\033[1;1H";
-
 	// Printing board
 	for (int x = 0; x < height; x++)
 	{
@@ -190,15 +140,9 @@ void Board::print() const
 
 		std::cout << "\n";
 	}
-
-	// Printing player scores
-	for (auto player : players)
-	{
-		std::cout << *player << std::endl;
-	}
 }
 
-bool Board::isCoordinatesValid(int x, int y)
+bool Board::isCoordinatesValid(int x, int y, std::shared_ptr<Player> activePlayer)
 {
 	// Coordinate should be in range
 	if (!(x < width && x > -1) && (y < height && height > -1))
@@ -207,7 +151,7 @@ bool Board::isCoordinatesValid(int x, int y)
 	// Coordinate's owner and active player should be same
 	// active player can only tap on their coordinate
 	// Or No one has yet tapped the coordinate
-	return coordinate->getOwner() == players[activePlayerIndex] || coordinate->isResetState();
+	return coordinate->getOwner() == activePlayer || coordinate->isResetState();
 }
 
 std::vector<std::shared_ptr<Coordinate>> Board::getAdjacentCoordinates(std::shared_ptr<Coordinate> coordinate) const
@@ -251,27 +195,6 @@ bool Board::isLeftwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) con
 bool Board::isRightwardSpaceAvailable(std::shared_ptr<Coordinate> coordinate) const
 {
 	return coordinate->getX() < width - 1;
-}
-
-bool Board::isGameOver() const
-{
-	return players.size() == 1;
-}
-
-std::shared_ptr<Player> Board::takePlayerDetailInput(int id	)
-{
-	std::cout << "Please enter name for player " << id << " : ";
-	std::string name = "";
-	int color = 37;
-
-	std::cin >> std::ws;
-	std::getline(std::cin, name);
-	
-	std::cout << "Please enter color code for player " << id << " : ";
-	std::cin >> std::ws;
-	std::cin >> color;
-
-	return std::make_shared<Player>(id, name, color);
 }
 
 std::shared_ptr<Coordinate> Board::getRightwardCoordinate(std::shared_ptr<Coordinate> coordinate) const

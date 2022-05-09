@@ -3,16 +3,15 @@
 #include <string>
 #include <ostream>
 
+#include "Color.h"
+
 class Player
 {
 private:
-
-	static int num;
-
 	std::string name;
 	int id;
 	int score;
-	int colorCode;
+	Color color;
 
 	// Indicating, that player playing for second time in single game
 	bool dirty;
@@ -21,19 +20,17 @@ private:
 	void print(std::ostream& out);
 	friend std::ostream& operator<<(std::ostream& out, Player& player);
 public:
-	Player();
 	Player(int id);
 	Player(Player const& player);
-	Player(int id, std::string name, int color);
+	Player(int id, std::string name, Color color);
 
 	bool operator == (Player const& obj);
 	
 	std::string getName() const;
-	int getScore() const;
+	bool isNoScore() const;
 	bool hasPlayed() const;
-	int getColorCode() const;
+	Color getColor() const;
 
-	void setScore(int score);
 	void played();
 	void increment();
 	void decrement();
